@@ -1,0 +1,110 @@
+#!/usr/bin/env ruby
+
+APP_NAME       = "meuponto"
+APP_HUMAN_NAME = "Meu Ponto"
+APP_VERSION    = [0,0,1]
+COPYRIGHT      = "Fabiano Pereira Soriani 2009, feel free to improve or change ;)"
+
+require "yaml"
+require "fileutils"
+require 'date'
+require 'time'
+
+PATH_ARQUIVO_HORAS = ".cartao.yml"
+
+class Ponto
+	
+	def initialize()
+		#@arquivo_horas = IO.open(PATH_ARQUIVO_HORAS)
+		FileUtils.touch( PATH_ARQUIVO_HORAS )
+		@cartao_horas = File.open( PATH_ARQUIVO_HORAS  ) { |yf| YAML::load( yf ) }
+		@cartao_horas = {} unless @cartao_horas
+	end
+	
+	def to_s
+		@cartao_horas.inspect
+	end
+	
+	def save_n_quit
+		File.open( PATH_ARQUIVO_HORAS, 'w' ) do |out|
+			YAML.dump( @cartao_horas, out )
+		end
+		true
+	end
+	
+	def in
+		@cartao_horas[Date.today]  ||= []
+		ultima = @cartao_horas[Date.today].last
+		#cuidando do caso de 2 IN seguidos!
+		if( !ultima.nil? && ultima.size > 1 && ultima[1] - ultima[0]  < 100 )
+			p "ops... voce esta marcando IN pela 2a vez consecutiva! Ajuste #{PATH_ARQUIVO_HORAS} manualmente..."
+		else
+			@cartao_horas[Date.today].push([Time.now(), false ])
+			puts "Ok, voce acabou de entrar"
+		end
+	end
+	
+	def out
+		#nesse caso provavelmente esqueceu de marcar IN e chamou OUT
+		if @cartao_horas[Date.today] .nil?
+			puts "  Voce esta saindo sem ter entrado, wrong!" 
+			puts "  Por vias das duvidas, eu posso logar 4h ok? [s/n]" 
+			resp = $stdin.gets()
+			puts(@cartao_horas[Date.today][-1] = [ Time.now() - (60*60*4), Time.now ] ) if resp[0,1] == 's'
+		else
+			atual = @cartao_horas[Date.today].last 
+			puts @cartao_horas[Date.today][-1] = [ atual[0], Time.now ]
+		end
+		hoje
+		
+	end
+	
+	def hoje
+		horas_dia = 0.0
+		if @cartao_horas[Date.today]
+			@cartao_horas[Date.today].each do |entrada|
+				if entrada[1]
+					horas_dia += entrada[1] - entrada[0]
+					logado ||= false
+				else
+					horas_dia += Time.now() - entrada[0]
+					puts entrada[0]
+					p entrada[1]
+					logado = true
+				end
+			end
+		end
+		horas_dia = 0.0 if horas_dia < 0.001
+		puts "Hoje voce fez: #{(horas_dia/3600.0).to_s[0,4]}h "
+		p "Voce ainda esta logado!"
+	end
+	
+	def reset
+		puts "  Voce pretende resetar todo banco de horas? [s/n]" 
+		resp = $stdin.gets()
+		if resp[0,1] == 's'
+			@cartao_horas = {}
+			p " >>> Todo banco de horas foi apagado!"
+		end
+	end
+	
+	private
+	
+	def give
+		@cartao_horas
+	end
+	
+	def take(cartao)
+		@cartao_horas = cartao if cartao.is_a? Hash
+	end
+end
+
+meu_ponto = Ponto.new()
+if ARGV.empty?
+	puts "Nenhuma acao executada! (argumentos aceitos: [in|out|hoje] )"
+else
+	acao  = ARGV[0].downcase.to_sym
+	meu_ponto.send acao  if meu_ponto.respond_to? acao
+	meu_ponto.save_n_quit
+end
+#puts meu_ponto
