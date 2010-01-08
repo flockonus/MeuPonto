@@ -1,0 +1,48 @@
+HOW TO USE
+
+meuponto v0.1.0 Fabiano Soriani
+http://github.com/flockonus/yUMLmyModels
+OpenSouce version
+
+Instalação:
+	(vá até a pasta onde você baixou o arquivo meuponto)
+	sudo install -b meuponto /bin/
+	(simples né?!)
+Uso:
+	meuponto <ARGUMENTO>
+
+# O uso é basicamente a chamada de qualquer argumento valido!
+#	Ex: meuponto in
+# 
+# O cartao de ponto é chamado .cartao.yml e fica em sua Home / Meus Documentos
+#	No caso Linux o arquivo é Oculto
+#	No caso Win ainda nao foi testado
+# O cartão pode ser editado manualmente, mas cuidado para nao alterar a formatação!
+
+
+ARGUMENTOS:
+  
+in
+    Marca que você acabou de entrar!
+out
+    Marca que você acabou de sair!
+hoje
+    Exibe quantas horas você fez no dia, até o momento (fração de hora)
+(anything else)
+    ERROR
+	#TODO: verificar a existencia do metodo (publico) e se nao existe, exibir um helpzinho =)
+
+
+TODO:
+# Criar o relatorio semanal, mensal, anual, por data
+# Verificar se o argumento corresponde a um metodo publico e != eval
+	# Exibir um help caso seja invalido
+# Criar um .yml pra cada ano!
+
+WISH:
+# Fazer uma interface usando GTK binds
+# Fazer uma sincronizacao entre um servidor remoto e o(s) cartao de ponto
+
+
+Doc by Fabiano Pereira Soriani, 2010-01-08
+
