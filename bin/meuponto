@@ -12,25 +12,62 @@ require 'time'
 
 PATH_ARQUIVO_HORAS = File.expand_path( '~/' )+'/'+".cartao.yml"
 
+
+class Time
+  def to_br
+    self.strftime "%I:%M:%S"
+  end
+end
+
+
+
 class Ponto
-	
-	def initialize()
-		FileUtils.touch( PATH_ARQUIVO_HORAS )
-		@cartao_horas = File.open( PATH_ARQUIVO_HORAS  ) { |yf| YAML::load( yf ) }
-		@cartao_horas = {} unless @cartao_horas
-	end
-	
+
+  ## MISC
+
+  def initialize()
+    FileUtils.touch( PATH_ARQUIVO_HORAS )
+    @cartao_horas = File.open( PATH_ARQUIVO_HORAS  ) { |yf| YAML::load( yf ) }
+    @cartao_horas = {} unless @cartao_horas
+  end
+
 	def to_s
 		@cartao_horas.inspect
 	end
-	
+
 	def save_n_quit
 		File.open( PATH_ARQUIVO_HORAS, 'w' ) do |out|
 			YAML.dump( @cartao_horas, out )
 		end
 		true
 	end
-	
+
+  def self.msg_erro( cod = :padrao )
+    case(cod)
+      when :padrao then
+        puts "Nenhuma acao executada!"
+        puts "    Argumentos aceitos: [in|out|hoje|week] "
+        puts "                        [this|last] [week] "
+
+      end
+  end
+
+  def msg_erro(cod = :padrao)
+    Ponto.msg_erro( cod )
+  end
+
+  def reset
+		puts "  Voce pretende resetar todo banco de horas? [s/n]"
+		resp = $stdin.gets()
+		if resp[0,1] == 's'
+			@cartao_horas = {}
+			p " >>> Todo banco de horas foi apagado!"
+		end
+	end
+
+
+  ## ACAO
+
 	def in
 		@cartao_horas[Date.today] ||= []
 		ultima = @cartao_horas[Date.today].last
@@ -43,68 +80,154 @@ class Ponto
 			puts "Ok, voce acabou de entrar"
 		end
 	end
-	
+
 	def out
 		#nesse caso provavelmente esqueceu de marcar IN e chamou OUT
 		if @cartao_horas[Date.today].nil? || @cartao_horas[Date.today].size == 0 || (@cartao_horas[Date.today].last && @cartao_horas[Date.today].last[1] )
-			puts "  Voce esta saindo sem ter entrado, wrong! Ajuste ~/#{PATH_ARQUIVO_HORAS} manualmente..." 
-			#puts "  Por vias das duvidas, eu posso logar 4h ok? [s/n]" 
+			puts "  Voce esta saindo sem ter entrado, wrong! Ajuste ~/#{PATH_ARQUIVO_HORAS} manualmente..."
+			#puts "  Por vias das duvidas, eu posso logar 4h ok? [s/n]"
 			#resp = $stdin.gets()
 			#puts(@cartao_horas[Date.today][-1] = [ Time.now() - (60*60*4), Time.now ] ) if resp[0,1].downcase == 's'
 		else
-			atual = @cartao_horas[Date.today].last 
-			puts @cartao_horas[Date.today][-1] = [ atual[0], Time.now ]
+		  #TODO validacao aqui de estar + de 24h de diff!
+      #FIXME bugga caso IN seja num dia OUT seja no seguinte!
+			atual = @cartao_horas[Date.today].last
+			@cartao_horas[Date.today][-1] = [ atual[0], Time.now ]
 		end
 		hoje
-		
+
 	end
-	
+
+
+  ## REPORTS
+
 	def hoje
-		horas_dia = 0.0
-		logado = false
-		if @cartao_horas[Date.today]
-			@cartao_horas[Date.today].each do |entrada|
-				if entrada[1]
-					horas_dia += entrada[1] - entrada[0]
-					puts "> #{entrada[0].strftime "%I:%M:%S"}"
-					puts "< #{entrada[1].strftime "%I:%M:%S"}"
-					puts ""
-				else
-					horas_dia += Time.now() - entrada[0]
-					puts "> #{entrada[0].strftime "%I:%M:%S"}"
-					logado = true
-				end
+    i = 0
+		ops, logado, horas_dia = dia()
+		ops.each do |entrada|
+			if entrada[:op] == :in
+				puts "> #{entrada[:data].to_br}"
+    	elsif entrada[:op] == :out
+				puts "< #{entrada[:data].to_br}"
+        puts ""
 			end
+      i +=1
 		end
 		puts "Hoje voce fez: #{(horas_dia/3600.0).to_s[0,4]}h "
 		puts "!  Voce ainda esta logado!" if logado
 	end
-	
-	def reset
-		puts "  Voce pretende resetar todo banco de horas? [s/n]" 
-		resp = $stdin.gets()
-		if resp[0,1] == 's'
-			@cartao_horas = {}
-			p " >>> Todo banco de horas foi apagado!"
+
+  def week(quando = false)
+    param = quando
+    param ||= 'this'
+    if param == 'this'
+      date = Date.today
+    elsif param == 'last'
+      date = Date.today - (Date.today.wday() + 1)
+    else
+      self.msg_erro
+      return false
+    end
+
+    i = date.wday
+    while( i >= 0)
+      #soma datas
+      i -= 1
+    end
+
+    p "estamos implementando este metodo! =D"
+
+  end
+
+  def dia(data = false)
+    if(data)
+      date = Date.parse(data)
+    else
+      date = Date.today
+    end
+
+		horas_dia = 0.0
+		logado = false
+    ops = []
+		if @cartao_horas[date]
+			@cartao_horas[date].each do |entrada|
+				if entrada[1]
+					horas_dia += entrada[1] - entrada[0]
+					ops << {:data => entrada[0], :op => :in }
+					ops << {:data => entrada[1], :op => :out}
+				else
+				  #soh deve somar caso esteja no dia de hoje ou ontem, soma, else seria uma falta de OUT
+				  if (Date.today - entrada[0].send(:to_date)).to_i <= 1
+  					horas_dia += Time.now() - entrada[0]
+          end
+					ops << {:data => entrada[0], :op => :in }
+					logado = true
+				end
+			end
 		end
-	end
-	
-	private
-	
+    return ops, logado, horas_dia
+  end
+
+
+  ## Modificadores
+
+  def this
+    if ARGV[1]
+      if ARGV[1] == 'week'
+        week('this')
+    elsif ARGV[1] == 'month'
+        #todo
+      else
+        puts "Esperado: semana ou mes apos 'this' "
+        self.msg_erro
+      end
+    else
+      puts "Esperado: semana ou mes apos 'this' "
+      self.msg_erro
+    end
+  end
+
+  def last
+    if ARGV[1]
+      if ARGV[1] == 'week'
+        week('last')
+    elsif ARGV[1] == 'month'
+        #todo
+      else
+        puts "Esperado: week ou mes apos 'last' "
+        self.msg_erro
+      end
+    else
+      puts "Esperado: week ou mes apos 'last' "
+      self.msg_erro
+    end
+  end
+
+private
+
 	def give
 		@cartao_horas
 	end
-	
+
 	def take(cartao)
 		@cartao_horas = cartao if cartao.is_a? Hash
 	end
+
+
+
+
 end
 
 meu_ponto = Ponto.new()
 if ARGV.empty?
-	puts "Nenhuma acao executada! (argumentos aceitos: [in|out|hoje] )"
+  meu_ponto.msg_erro
 else
 	acao  = ARGV[0].downcase.to_sym
-	meu_ponto.send acao  if meu_ponto.respond_to? acao
-	meu_ponto.save_n_quit
+  if meu_ponto.respond_to? acao
+    meu_ponto.send acao
+  	meu_ponto.save_n_quit
+  else
+    meu_ponto.msg_erro
+  end
 end
+
