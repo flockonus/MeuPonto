@@ -31,16 +31,16 @@ class Ponto
     @cartao_horas = {} unless @cartao_horas
   end
 
-	def to_s
-		@cartao_horas.inspect
-	end
+  def to_s
+    @cartao_horas.inspect
+  end
 
-	def save_n_quit
-		File.open( PATH_ARQUIVO_HORAS, 'w' ) do |out|
-			YAML.dump( @cartao_horas, out )
-		end
-		true
-	end
+  def save_n_quit
+    File.open( PATH_ARQUIVO_HORAS, 'w' ) do |out|
+      YAML.dump( @cartao_horas, out )
+    end
+    true
+  end
 
   def self.msg_erro( cod = :padrao )
     case(cod)
@@ -57,31 +57,31 @@ class Ponto
   end
 
   def reset
-		puts "  Voce pretende resetar todo banco de horas? [s/n]"
-		resp = $stdin.gets()
-		if resp[0,1] == 's'
-			@cartao_horas = {}
-			p " >>> Todo banco de horas foi apagado!"
-		end
-	end
+    puts "  Voce pretende resetar todo banco de horas? [s/n]"
+    resp = $stdin.gets()
+    if resp[0,1] == 's'
+      @cartao_horas = {}
+      p " >>> Todo banco de horas foi apagado!"
+    end
+  end
 
 
   ## ACAO
 
-	def in
-		@cartao_horas[Date.today] ||= []
-		ultima = @cartao_horas[Date.today].last
-		#puts ultima[1]
-		#cuidando do caso de 2 IN seguidos!
-		if( !ultima.nil? && !ultima[1] )
-			puts "ops... voce esta marcando IN pela 2a vez consecutiva! Ajuste ~/#{PATH_ARQUIVO_HORAS} manualmente..."
-		else
-			@cartao_horas[Date.today].push([Time.now(), false ])
-			puts "Ok, voce acabou de entrar"
-		end
-	end
+  def in
+    @cartao_horas[Date.today] ||= []
+    ultima = @cartao_horas[Date.today].last
+    #puts ultima[1]
+    #cuidando do caso de 2 IN seguidos!
+    if( !ultima.nil? && !ultima[1] )
+      puts "ops... voce esta marcando IN pela 2a vez consecutiva! Ajuste ~/#{PATH_ARQUIVO_HORAS} manualmente..."
+    else
+      @cartao_horas[Date.today].push([Time.now(), false ])
+      puts "Ok, voce acabou de entrar"
+    end
+  end
 
-	def out
+  def out
     skip = false
 
     if @cartao_horas.size == 0
@@ -99,47 +99,47 @@ class Ponto
       atual = false
     end
 
-		#nesse caso provavelmente esqueceu de marcar IN e chamou OUT
-		if atual && !skip
-		  #TODO validacao aqui de estar + de 24h de diff!
+    #nesse caso provavelmente esqueceu de marcar IN e chamou OUT
+    if atual && !skip
+      #TODO validacao aqui de estar + de 24h de diff!
       # gambiarra pq nao sei se eh hj ou ontem, e nao quero usar if
-			@cartao_horas[ atual[0].send(:to_date) ][-1] = [ atual[0], Time.now ]
-		  hoje(atual[0].send(:to_date).to_s)
-		else
-			puts "  Voce esta saindo sem ter entrado, wrong! Ajuste ~/#{PATH_ARQUIVO_HORAS} manualmente..."
-			#puts "  Por vias das duvidas, eu posso logar 4h ok? [s/n]"
-			#resp = $stdin.gets()
-			#puts(@cartao_horas[Date.today][-1] = [ Time.now() - (60*60*4), Time.now ] ) if resp[0,1].downcase == 's'
-		end
+      @cartao_horas[ atual[0].send(:to_date) ][-1] = [ atual[0], Time.now ]
+      hoje(atual[0].send(:to_date).to_s)
+    else
+      puts "  Voce esta saindo sem ter entrado, wrong! Ajuste ~/#{PATH_ARQUIVO_HORAS} manualmente..."
+      #puts "  Por vias das duvidas, eu posso logar 4h ok? [s/n]"
+      #resp = $stdin.gets()
+      #puts(@cartao_horas[Date.today][-1] = [ Time.now() - (60*60*4), Time.now ] ) if resp[0,1].downcase == 's'
+    end
 
-	end
+  end
 
 
   ## REPORTS
 
-	def hoje(data = false)
+  def hoje(data = false)
     i = 0
 
     # dia especifico
     if data
-  		ops, logado, horas_dia = dia(data)
+      ops, logado, horas_dia = dia(data)
     # hoje
     else
-  		ops, logado, horas_dia = dia()
+      ops, logado, horas_dia = dia()
     end
 
-		ops.each do |entrada|
-			if entrada[:op] == :in
-				puts "> #{entrada[:data].to_br}"
-    	elsif entrada[:op] == :out
-				puts "< #{entrada[:data].to_br}"
+    ops.each do |entrada|
+      if entrada[:op] == :in
+        puts "> #{entrada[:data].to_br}"
+      elsif entrada[:op] == :out
+        puts "< #{entrada[:data].to_br}"
         puts ""
-			end
+      end
       i +=1
-		end
-		puts "Hoje voce fez: #{(horas_dia/3600.0).to_s[0,4]}h "
-		puts "!  Voce ainda esta logado!" if logado
-	end
+    end
+    puts "Hoje voce fez: #{(horas_dia/3600.0).to_s[0,4]}h "
+    puts "!  Voce ainda esta logado!" if logado
+  end
 
   def week(quando = false)
     param = quando
@@ -171,25 +171,25 @@ class Ponto
       date = Date.today
     end
 
-		horas_dia = 0.0
-		logado = false
+    horas_dia = 0.0
+    logado = false
     ops = []
-		if @cartao_horas[date]
-			@cartao_horas[date].each do |entrada|
-				if entrada[1]
-					horas_dia += entrada[1] - entrada[0]
-					ops << {:data => entrada[0], :op => :in }
-					ops << {:data => entrada[1], :op => :out}
-				else
-				  #soh deve somar caso esteja no dia de hoje ou ontem, soma, else seria uma falta de OUT
-				  if (Date.today - entrada[0].send(:to_date)).to_i <= 1
-  					horas_dia += Time.now() - entrada[0]
+    if @cartao_horas[date]
+      @cartao_horas[date].each do |entrada|
+        if entrada[1]
+          horas_dia += entrada[1] - entrada[0]
+          ops << {:data => entrada[0], :op => :in }
+          ops << {:data => entrada[1], :op => :out}
+        else
+          #soh deve somar caso esteja no dia de hoje ou ontem, soma, else seria uma falta de OUT
+          if (Date.today - entrada[0].send(:to_date)).to_i <= 1
+            horas_dia += Time.now() - entrada[0]
           end
-					ops << {:data => entrada[0], :op => :in }
-					logado = true
-				end
-			end
-		end
+          ops << {:data => entrada[0], :op => :in }
+          logado = true
+        end
+      end
+    end
     return ops, logado, horas_dia
   end
 
@@ -230,13 +230,13 @@ class Ponto
 
 private
 
-	def give
-		@cartao_horas
-	end
+  def give
+    @cartao_horas
+  end
 
-	def take(cartao)
-		@cartao_horas = cartao if cartao.is_a? Hash
-	end
+  def take(cartao)
+    @cartao_horas = cartao if cartao.is_a? Hash
+  end
 
 
 
@@ -247,10 +247,10 @@ meu_ponto = Ponto.new()
 if ARGV.empty?
   meu_ponto.msg_erro
 else
-	acao  = ARGV[0].downcase.to_sym
+  acao  = ARGV[0].downcase.to_sym
   if meu_ponto.respond_to? acao
     meu_ponto.send acao
-  	meu_ponto.save_n_quit
+    meu_ponto.save_n_quit
   else
     meu_ponto.msg_erro
   end
