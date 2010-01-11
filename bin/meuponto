@@ -82,28 +82,52 @@ class Ponto
 	end
 
 	def out
+    skip = false
+
+    if @cartao_horas.size == 0
+      skip = true
+    end
+
+    # A pessoa deu um IN hoje
+    if @cartao_horas[Date.today] && @cartao_horas[Date.today].last && @cartao_horas[Date.today].last[1] == false
+      atual = @cartao_horas[Date.today].last
+    # Segunda chance, a pessoa deu IN ontem
+    elsif @cartao_horas[Date.today - 1] && @cartao_horas[Date.today - 1].last && @cartao_horas[Date.today - 1].last[1] == false
+      atual = @cartao_horas[Date.today - 1].last
+    # A pessoa nao tem IN pendente ontem ou hoje
+    else
+      atual = false
+    end
+
 		#nesse caso provavelmente esqueceu de marcar IN e chamou OUT
-		if @cartao_horas[Date.today].nil? || @cartao_horas[Date.today].size == 0 || (@cartao_horas[Date.today].last && @cartao_horas[Date.today].last[1] )
+		if atual && !skip
+		  #TODO validacao aqui de estar + de 24h de diff!
+      # gambiarra pq nao sei se eh hj ou ontem, e nao quero usar if
+			@cartao_horas[ atual[0].send(:to_date) ][-1] = [ atual[0], Time.now ]
+		  hoje(atual[0].send(:to_date).to_s)
+		else
 			puts "  Voce esta saindo sem ter entrado, wrong! Ajuste ~/#{PATH_ARQUIVO_HORAS} manualmente..."
 			#puts "  Por vias das duvidas, eu posso logar 4h ok? [s/n]"
 			#resp = $stdin.gets()
 			#puts(@cartao_horas[Date.today][-1] = [ Time.now() - (60*60*4), Time.now ] ) if resp[0,1].downcase == 's'
-		else
-		  #TODO validacao aqui de estar + de 24h de diff!
-      #FIXME bugga caso IN seja num dia OUT seja no seguinte!
-			atual = @cartao_horas[Date.today].last
-			@cartao_horas[Date.today][-1] = [ atual[0], Time.now ]
 		end
-		hoje
 
 	end
 
 
   ## REPORTS
 
-	def hoje
+	def hoje(data = false)
     i = 0
-		ops, logado, horas_dia = dia()
+
+    # dia especifico
+    if data
+  		ops, logado, horas_dia = dia(data)
+    # hoje
+    else
+  		ops, logado, horas_dia = dia()
+    end
+
 		ops.each do |entrada|
 			if entrada[:op] == :in
 				puts "> #{entrada[:data].to_br}"
@@ -139,6 +163,7 @@ class Ponto
 
   end
 
+  # recebe string de data AAAA-MM-DD, retorna toda atividade do dia
   def dia(data = false)
     if(data)
       date = Date.parse(data)
