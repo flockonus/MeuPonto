@@ -1,0 +1,7 @@
+# Estuturação lógica do arquivo YAML
+
+Hash[Date] =
+             Array[] =
+                       Array[0] = Time
+                       Array[1] = Time || false
+
