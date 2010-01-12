@@ -15,7 +15,7 @@ PATH_ARQUIVO_HORAS = File.expand_path( '~/' )+'/'+".cartao.yml"
 
 class Time
   def to_br
-    self.strftime "%I:%M:%S"
+    self.strftime "%H:%M:%S"
   end
 end
 
@@ -137,7 +137,7 @@ class Ponto
       end
       i +=1
     end
-    puts "Hoje voce fez: #{(horas_dia/3600.0).to_s[0,4]}h "
+    puts "Hoje voce fez: #{(horas_dia).to_s[0,4]}h "
     puts "!  Voce ainda esta logado!" if logado
   end
 
@@ -153,13 +153,28 @@ class Ponto
       return false
     end
 
-    i = date.wday
-    while( i >= 0)
-      #soma datas
-      i -= 1
-    end
+    i = 0
+    soma_horas = 0.0
+    while( i <= date.wday)
+      this = (date - date.wday + i )
+      ops, logado, horas_dia = dia(this.to_s)
+      #Impressao
+      puts ""+this.strftime("%A")
+      ops.each do |o|
+        if o[:op] == :in
+          puts "  >#{o[:data].to_br}"
+        elsif o[:op] == :out
+          puts "  <#{o[:data].to_br}"
+        end
+      end
+      puts " +#{horas_dia.to_s[0,4]}h"
+      soma_horas += horas_dia
 
-    p "estamos implementando este metodo! =D"
+      i += 1
+    end
+    puts "Nessa semana voce fez: #{soma_horas.to_s[0,5]}h"
+
+    #p "estamos implementando este metodo! =D"
 
   end
 
@@ -190,7 +205,7 @@ class Ponto
         end
       end
     end
-    return ops, logado, horas_dia
+    return ops, logado, (horas_dia/3600.0)
   end
 
 
