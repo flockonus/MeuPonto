@@ -141,6 +141,7 @@ class Ponto
     puts "!  Voce ainda esta logado!" if logado
   end
 
+  #TODO Mudar o nome de #week pra #semana
   def week(quando = false)
     param = quando
     param ||= 'this'
@@ -160,14 +161,24 @@ class Ponto
       ops, logado, horas_dia = dia(this.to_s)
       #Impressao
       puts ""+this.strftime("%A")
+      if ops.size > 0
+        puts " |    IN    | |    OUT   |  "
+      end
       ops.each do |o|
         if o[:op] == :in
-          puts "  >#{o[:data].to_br}"
+          print " | #{o[:data].to_br} |"
         elsif o[:op] == :out
-          puts "  <#{o[:data].to_br}"
+          print " | #{o[:data].to_br} | \n"
+        else
+          puts "?"
         end
       end
+      if logado
+        print " | (logado) |"
+        puts ""
+      end
       puts " +#{horas_dia.to_s[0,4]}h"
+      puts ""
       soma_horas += horas_dia
 
       i += 1
