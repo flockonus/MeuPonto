@@ -46,8 +46,8 @@ class Ponto
     case(cod)
       when :padrao then
         puts "Nenhuma acao executada!"
-        puts "    Argumentos aceitos: in [-#|#:#]| out | hoje | week "
-        puts "                        [this|last] week "
+        puts "    Argumentos aceitos: in/out [-#|#:#]         "
+        puts "                        hoje | [this|last] week "
 
       end
   end
@@ -76,20 +76,8 @@ class Ponto
     if( !ultima.nil? && !ultima[1] )
       puts "ops... voce esta marcando IN pela 2a vez consecutiva! Ajuste ~/#{PATH_ARQUIVO_HORAS} manualmente..."
     else
-	time = Time.now()
-	add_min = /^(-|\+)(\d+)$/
-	add_hora = /^(\d+):(\d+)$/
-	if ARGV[1] 
-		# Só um numero, - 2, -3
-		if min = ARGV[1] .match(add_min)
-			time = eval("time #{min[1]} #{min[2].to_i*60}")
-		# Um horario: 08:10, 18:00
-		elsif hora = ARGV[1] .match(add_hora)
-			time = Time.parse(Date.today.to_s() +" #{ hora[0] }") 
-		else
-			puts "Erro: Formato de hora ou acrescimo nao reconhecido!"
-		end
-	end
+	# TODO validar se nao eh anterior a alguma entrada ou saida do mesmo dia
+	time = extrai_time ARGV[1]
       @cartao_horas[Date.today].push([time, false ])
       puts "Ok, voce acabou de entrar: Hoje #{time.strftime("%H:%M") }"
     end
@@ -117,7 +105,8 @@ class Ponto
     if atual && !skip
       #TODO validacao aqui de estar + de 24h de diff!
       # gambiarra pq nao sei se eh hj ou ontem, e nao quero usar if
-      @cartao_horas[ atual[0].send(:to_date) ][-1] = [ atual[0], Time.now ]
+      time = extrai_time ARGV[1]
+      @cartao_horas[ atual[0].send(:to_date) ][-1] = [ atual[0], time ]
       hoje(atual[0].send(:to_date).to_s)
     else
       puts "  Voce esta saindo sem ter entrado, wrong! Ajuste ~/#{PATH_ARQUIVO_HORAS} manualmente..."
@@ -128,6 +117,30 @@ class Ponto
 
   end
 
+private
+	def extrai_time(parametro)
+		time = Time.now()
+		add_min = /^(-|\+)(\d+)$/
+		add_hora = /^(\d+):(\d+)$/
+		if parametro
+			# Só um numero, - 2, -3
+			if min = parametro .match(add_min)
+				time = eval("time #{min[1]} #{min[2].to_i*60}")
+			# Um horario: 08:10, 18:00
+			elsif hora = ARGV[1] .match(add_hora)
+				time = Time.parse(Date.today.to_s() +" #{ hora[0] }") 
+			else
+				puts "Erro: Formato de hora ou acrescimo nao reconhecido!"
+				puts ""
+				msg_erro
+				Kernel.exit
+			end
+		end
+		time
+	end
+	
+
+public
 
   ## REPORTS
 
