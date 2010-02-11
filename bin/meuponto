@@ -46,8 +46,8 @@ class Ponto
     case(cod)
       when :padrao then
         puts "Nenhuma acao executada!"
-        puts "    Argumentos aceitos: [in|out|hoje|week] "
-        puts "                        [this|last] [week] "
+        puts "    Argumentos aceitos: in [-#|#:#]| out | hoje | week "
+        puts "                        [this|last] week "
 
       end
   end
@@ -76,8 +76,22 @@ class Ponto
     if( !ultima.nil? && !ultima[1] )
       puts "ops... voce esta marcando IN pela 2a vez consecutiva! Ajuste ~/#{PATH_ARQUIVO_HORAS} manualmente..."
     else
-      @cartao_horas[Date.today].push([Time.now(), false ])
-      puts "Ok, voce acabou de entrar"
+	time = Time.now()
+	add_min = /^(-|\+)(\d+)$/
+	add_hora = /^(\d+):(\d+)$/
+	if ARGV[1] 
+		# Só um numero, - 2, -3
+		if min = ARGV[1] .match(add_min)
+			time = eval("time #{min[1]} #{min[2].to_i*60}")
+		# Um horario: 08:10, 18:00
+		elsif hora = ARGV[1] .match(add_hora)
+			time = Time.parse(Date.today.to_s() +" #{ hora[0] }") 
+		else
+			puts "Erro: Formato de hora ou acrescimo nao reconhecido!"
+		end
+	end
+      @cartao_horas[Date.today].push([time, false ])
+      puts "Ok, voce acabou de entrar: Hoje #{time.strftime("%H:%M") }"
     end
   end
 
@@ -183,6 +197,7 @@ class Ponto
 
       i += 1
     end
+    #TODO Aplicar fator de convercao para minutos (h%1)/1.666666 (arredonda pra 2 casas)
     puts "Nessa semana voce fez: #{soma_horas.to_s[0,5]}h"
 
     #p "estamos implementando este metodo! =D"
